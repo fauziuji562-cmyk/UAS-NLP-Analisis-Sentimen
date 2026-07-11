@@ -3,37 +3,41 @@ import pickle
 import re
 import time
 
-# 1. Konfigurasi Halaman (Lebar, ada icon, judul tab)
-st.set_page_config(page_title="Analisis Sentimen Pariwisata", page_icon="🏖️", layout="wide")
+# 1. Konfigurasi Halaman
+st.set_page_config(page_title="Analisis Sentimen Pariwisata", page_icon="🗺️", layout="wide")
 
-# 2. Menyembunyikan menu bawaan Streamlit agar terlihat seperti web profesional
+# 2. CSS Custom untuk Background Full Layar dan Sembunyikan Menu
 st.markdown("""
 <style>
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
     header {visibility: hidden;}
+    
+    /* Mengatur Background Keseluruhan Halaman (Tema Pantai/Maps) */
+    .stApp {
+        background-image: url("https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1920&q=80");
+        background-size: cover;
+        background-position: center;
+        background-attachment: fixed;
+    }
+    
+    /* Efek kotak gelap transparan agar teks tetap jelas terbaca di atas gambar background */
+    .main .block-container {
+        background-color: rgba(20, 25, 30, 0.85);
+        padding: 3rem;
+        border-radius: 15px;
+        color: #ffffff;
+        box-shadow: 0px 10px 30px rgba(0,0,0,0.5);
+    }
 </style>
 """, unsafe_allow_html=True)
 
-# 3. SIDEBAR (Navigasi & Info Kelompok)
-with st.sidebar:
-    st.image("https://cdn-icons-png.flaticon.com/512/3069/3069172.png", width=100) # Ikon AI
-    st.title("🧭 Panel Navigasi")
-    st.markdown("---")
-    st.subheader("👨‍💻 Tim Pengembang")
-    st.write("1. Nama Anggota 1 (NIM)")
-    st.write("2. Nama Anggota 2 (NIM)")
-    st.write("3. Nama Anggota 3 (NIM)")
-    st.markdown("---")
-    st.info("📚 **Mata Kuliah:** Natural Language Processing (NLP)\n\n👨‍🏫 **Dosen:** Bapak Waziruddin")
-
-# 4. HEADER UTAMA (Gambar Banner Pariwisata/Pantai)
-st.image("https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=80", use_column_width=True)
-st.title("🌊 Sistem Analisis Sentimen Ulasan Wisata")
-st.markdown("**Artificial Intelligence (AI)** untuk mendeteksi opini publik (Positif/Negatif) terhadap destinasi wisata berdasarkan ulasan pengunjung di Google Maps.")
+# 3. HEADER UTAMA & SUBJUDUL
+st.title("📍 Google Maps Review Analyzer")
+st.subheader("Sistem Analisis Sentimen Ulasan Wisata")
 st.markdown("---")
 
-# 5. Fungsi Load Model (Di-cache agar web sangat cepat)
+# 4. Fungsi Load Model
 @st.cache_resource
 def load_model():
     model = pickle.load(open('model_sentimen.pkl', 'rb'))
@@ -42,47 +46,47 @@ def load_model():
 
 model, tfidf = load_model()
 
-# 6. LAYOUT BAGI DUA KOLOM (Kiri Input, Kanan Info)
-col1, col2 = st.columns([2, 1])
+# 5. LAYOUT BAGI DUA KOLOM
+col1, col2 = st.columns([1.5, 1])
 
 # KOLOM KIRI (Area Input AI)
 with col1:
-    st.subheader("📝 Masukkan Ulasan Wisatawan")
-    # Menggunakan form agar tombol enter lebih rapi
+    st.write("📝 **Masukkan Ulasan Wisatawan**")
     with st.form("form_analisis"):
         ulasan = st.text_area("Ketik atau paste ulasan dari Google Maps di sini:", height=150, 
-                              placeholder="Contoh: Pantai ini pemandangannya sangat luar biasa indah, tapi sayang sekali tempat parkirnya sempit dan banyak sampah berserakan...")
+                              placeholder="Contoh: Tempatnya bagus banget, pantainya bersih tapi akses jalan ke sana masih berlubang...")
         submit_btn = st.form_submit_button("🔍 Analisis Sentimen AI")
 
     # Logika jika tombol ditekan
     if submit_btn and ulasan:
-        with st.spinner('🤖 AI sedang membaca dan menganalisis teks...'):
-            time.sleep(1) # Animasi loading buatan biar keren
+        with st.spinner('🤖 AI sedang menganalisis teks...'):
+            time.sleep(1) # Animasi loading
             # Pembersihan teks
             teks_bersih = re.sub(r'[^a-z\s]', '', str(ulasan).lower())
             # Prediksi menggunakan model AI
             hasil = model.predict(tfidf.transform([teks_bersih]))[0]
             
-            st.markdown("### 📊 Hasil Analisis AI:")
+            st.markdown("### 📊 Hasil Prediksi:")
             if hasil == 'Positif':
-                st.success("✨ **KATEGORI: POSITIF**")
-                st.write("Wisatawan ini memiliki pengalaman yang menyenangkan dan memberikan opini baik.")
-                st.balloons() # Muncul animasi balon
+                st.success("✨ **KATEGORI: POSITIF**\n\nBerdasarkan gaya bahasanya, ulasan ini memuat pengalaman pengunjung yang menyenangkan atau memuaskan.")
+                st.balloons()
             else:
-                st.error("🚨 **KATEGORI: NEGATIF**")
-                st.write("Wisatawan ini menyampaikan keluhan atau memiliki pengalaman kurang menyenangkan.")
+                st.error("🚨 **KATEGORI: NEGATIF**\n\nBerdasarkan gaya bahasanya, ulasan ini memuat keluhan, kritik, atau pengalaman buruk dari pengunjung.")
 
     elif submit_btn and not ulasan:
         st.warning("⚠️ Ulasan tidak boleh kosong! Silakan ketik sesuatu terlebih dahulu.")
 
-# KOLOM KANAN (Info Tambahan & Ilustrasi Maps)
+# KOLOM KANAN (Informasi Lengkap Sistem & Ikon Maps)
 with col2:
-    st.subheader("🗺️ Tentang Sistem")
-    st.image("https://images.unsplash.com/photo-1524661135-423995f22d0b?auto=format&fit=crop&w=500&q=60", caption="Analisis Sentimen Berbasis Lokasi")
-    st.markdown("""
-    **Bagaimana AI ini bekerja?**
-    1. **Input Data:** Sistem menerima teks ulasan mentah.
-    2. **Preprocessing:** Teks dibersihkan dari simbol dan angka.
-    3. **Ekstraksi Fitur:** Kata-kata diubah menjadi bobot matriks menggunakan algoritma **TF-IDF**.
-    4. **Klasifikasi:** Model **Logistic Regression** memprediksi hasil akhir secara akurat.
-    """)
+    # Menggunakan ikon aplikasi map sesuai permintaan
+    st.image("https://upload.wikimedia.org/wikipedia/commons/thumb/a/aa/Google_Maps_icon_%282020%29.svg/200px-Google_Maps_icon_%282020%29.svg.png", width=80)
+    
+    st.markdown("### 📌 Tentang Sistem")
+    
+    with st.expander("🎯 Fungsi & Tujuan", expanded=True):
+        st.write("**Fungsi:** Mendeteksi dan mengklasifikasikan teks ulasan secara otomatis ke dalam sentimen Positif atau Negatif menggunakan *Machine Learning*.")
+        st.write("**Tujuan:** Membantu pengelola destinasi wisata untuk memantau reputasi tempat mereka dengan cepat, serta membantu calon wisatawan mengambil keputusan tanpa harus membaca ribuan ulasan manual.")
+        
+    with st.expander("⚖️ Kelebihan & Kekurangan"):
+        st.success("**Kelebihan:**\n- Analisis berjalan instan (Real-time).\n- Mampu memproses bahasa Indonesia karena telah dibekali teknik *Stemming* teks.\n- Antarmuka web ringan dan responsif.")
+        st.error("**Kekurangan:**\n- AI masih kesulitan memahami bahasa gaul (*slang*), sarkasme tingkat tinggi, atau singkatan daerah yang sangat spesifik.\n- Akurasi model masih sangat bergantung pada variasi data latih (*dataset*) awal.")
